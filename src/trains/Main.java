@@ -2,6 +2,14 @@ package trains;
 
 public class Main {
 	public static void main(String[] args) {
+		Database.openConnection();
+		
+		try {
+			Database.createProcedure();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		Train[] trains = new Train[14];
 		Station[] stations = new Station[5];
 		Stop[] stops = new Stop[70];
@@ -21,6 +29,18 @@ public class Main {
 		trains[12] = new Train("N 341");
 		trains[13] = new Train("S 342");
 
+		try {
+			for (Train t : trains) {
+				Database.insertTrain(t);
+			}
+
+			for (Train tr : Database.readTrains()) {
+				System.out.println(tr.getName());
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
 		stations[0] = new Station("Chicago IL - Union Station");
 		stations[1] = new Station("Glennview IL");
 		stations[2] = new Station("Sturtevant WI");
@@ -35,7 +55,7 @@ public class Main {
 				{ "15:00", "15:10", "15:23", "16:01", "16:29" }, { "17:08", "17:32", "18:14", "18:28", "18:45" },
 				{ "17:45", "17:55", "18:08", "18:46", "19:14" }, { "20:05", "20:27", "21:05", "21:19", "21:34" },
 				{ "19:35", "19:45", "19:58", "20:36", "21:04" } };
-		
+
 		int stop = 0;
 		for (int train = 0; train < trains.length; train++) {
 			for (int station = 0; station < stations.length; station++) {
@@ -47,10 +67,9 @@ public class Main {
 				stop++;
 			}
 		}
-		
+
 		Timetable timetable = new Timetable(trains, stations, stops);
-		
-		System.out.println(timetable.listSchedule());
-		System.out.println(timetable.listDepartures());
+
+		Database.closeConnection();
 	}
 }
