@@ -1,8 +1,16 @@
 package trains;
 
+import java.sql.SQLException;
+
 public class Main {
 	public static void main(String[] args) {
-		Database.openConnection();
+		try {
+			Database.openConnection();
+		} catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
 		
 		try {
 			Database.createProcedure();
@@ -31,7 +39,7 @@ public class Main {
 
 		try {
 			for (Train t : trains) {
-				Database.insertTrain(t);
+				Database.createTrain(t);
 			}
 
 			for (Train tr : Database.readTrains()) {
@@ -69,7 +77,15 @@ public class Main {
 		}
 
 		Timetable timetable = new Timetable(trains, stations, stops);
-
-		Database.closeConnection();
+		
+		Train train = new Train("N 343");
+		try {
+			Database.updateTrain(trains[0], train);
+			Database.deleteTrain(train);
+			Database.createTrain(train);
+			Database.closeConnection();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }

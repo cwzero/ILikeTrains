@@ -21,135 +21,132 @@ public class Database {
 			"READS SQL DATA DYNAMIC RESULT SETS 1", "BEGIN ATOMIC",
 			"DECLARE free CURSOR FOR (SELECT COUNT(*) FROM STOP WHERE STOP_PLATFORM = platform AND STOP_TIME = t);",
 			"OPEN free;", "END" };
-	
-	private static String insertTrain = "INSERT INTO TRAIN (TRAIN_NAME) VALUES (?)";
-	
+
+	private static String createTrain = "INSERT INTO TRAIN (TRAIN_NAME) VALUES (?)";
 	private static String readTrains = "SELECT TRAIN_NAME FROM TRAIN";
+	private static String updateTrain = "UPDATE TRAIN SET TRAIN_NAME = ? WHERE TRAIN_NAME = ?";
+	private static String deleteTrain = "DELETE FROM TRAIN WHERE TRAIN_NAME = ?";
 
-	public static void openConnection() {
-		try {
-			Class.forName("org.hsqldb.jdbc.JDBCDriver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+	public static void openConnection() throws ClassNotFoundException, SQLException {
+		Class.forName("org.hsqldb.jdbc.JDBCDriver");
 
-		try {
-			connection = DriverManager.getConnection("jdbc:hsqldb:mem:trains", "sa", "sa");
-			connection.setAutoCommit(false);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		connection = DriverManager.getConnection("jdbc:hsqldb:mem:trains", "sa", "sa");
+		connection.setAutoCommit(false);
 	}
 
-	public static void createTables() throws Exception {
+	public static void createTables() throws SQLException {
 		createTrainTable();
 		createStationTable();
 		createStopTable();
 		createBridgeTable();
 	}
 
-	public static void executeStatement(String sql) throws Exception {
-		try {
-			PreparedStatement statement = connection.prepareStatement(sql);
+	public static void executeStatement(String sql) throws SQLException {
+		PreparedStatement statement = connection.prepareStatement(sql);
 
-			if (statement.execute()) {
-				connection.commit();
-			} else {
-				throw statement.getWarnings();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+		if (statement.execute()) {
+			connection.commit();
+		} else {
+			throw statement.getWarnings();
 		}
 	}
 
-	public static void executeStatement(String[] sql) throws Exception {
+	public static void executeStatement(String[] sql) throws SQLException {
 		StringBuilder builder = new StringBuilder();
 		for (String s : sql) {
 			builder.append(s + "\n");
 		}
 		String sqlBuf = builder.toString();
 
-		try {
-			PreparedStatement statement = connection.prepareStatement(sqlBuf);
-			if (statement.execute()) {
-				connection.commit();
-			} else {
-				throw statement.getWarnings();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+		PreparedStatement statement = connection.prepareStatement(sqlBuf);
+		if (statement.execute()) {
+			connection.commit();
+		} else {
+			throw statement.getWarnings();
 		}
 	}
 
-	public static void createBridgeTable() throws Exception {
+	public static void createBridgeTable() throws SQLException {
 		executeStatement(bridgeTable);
 	}
 
-	public static void createTrainTable() throws Exception {
+	public static void createTrainTable() throws SQLException {
 		executeStatement(trainTable);
 	}
 
-	public static void createStationTable() throws Exception {
+	public static void createStationTable() throws SQLException {
 		executeStatement(stationTable);
 	}
 
-	public static void createStopTable() throws Exception {
+	public static void createStopTable() throws SQLException {
 		executeStatement(stopTable);
 	}
 
-	public static void createProcedure() throws Exception {
+	public static void createProcedure() throws SQLException {
 		createTables();
 		executeStatement(proc);
 	}
-	
-	public static void insertTrain(Train train) throws Exception {
-		try {
-			PreparedStatement statement = connection.prepareStatement(insertTrain);
-			
-			statement.setString(1, train.getName());
 
-			if (statement.executeUpdate() > 0) {
-				connection.commit();
-			} else {
-				throw statement.getWarnings();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+	public static void createTrain(Train train) throws SQLException {
+		PreparedStatement statement = connection.prepareStatement(createTrain);
+
+		statement.setString(1, train.getName());
+
+		if (statement.executeUpdate() > 0) {
+			connection.commit();
+		} else {
+			throw statement.getWarnings();
 		}
 	}
-	
-	public static Train[] readTrains() throws Exception {
+
+	public static Train[] readTrains() throws SQLException {
 		List<Train> result = new ArrayList<Train>();
 
-		try {
-			Statement statement = connection.createStatement();
+		Statement statement = connection.createStatement();
 
-			if (statement.execute(readTrains)) {
-				connection.commit();
-				
-				ResultSet rs = statement.getResultSet();
-				
-				if (rs.next()) {
-					while (!rs.isAfterLast()) {
-						result.add(new Train(rs.getString(1)));
-						rs.next();
-					}
+		if (statement.execute(readTrains)) {
+			connection.commit();
+
+			ResultSet rs = statement.getResultSet();
+
+			if (rs.next()) {
+				while (!rs.isAfterLast()) {
+					result.add(new Train(rs.getString(1)));
+					rs.next();
 				}
-			} else {
-				throw statement.getWarnings();
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+		} else {
+			throw statement.getWarnings();
 		}
-		
 		return result.toArray(new Train[result.size()]);
 	}
 
-	public static void closeConnection() {
-		try {
-			connection.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
+	public static void updateTrain(Train oldTrain, Train newTrain) throws SQLException {
+		PreparedStatement statement = connection.prepareStatement(updateTrain);
+
+		statement.setString(1, oldTrain.getName());
+		statement.setString(2, newTrain.getName());
+
+		if (statement.executeUpdate() > 0) {
+			connection.commit();
+		} else {
+			throw statement.getWarnings();
 		}
+	}
+
+	public static void deleteTrain(Train train) throws SQLException {
+		PreparedStatement statement = connection.prepareStatement(deleteTrain);
+
+		statement.setString(1, train.getName());
+
+		if (statement.executeUpdate() > 0) {
+			connection.commit();
+		} else {
+			throw statement.getWarnings();
+		}
+	}
+
+	public static void closeConnection() throws SQLException {
+		connection.close();
 	}
 }
