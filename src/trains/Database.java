@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,11 @@ public class Database {
 	public static void openConnection() throws ClassNotFoundException, SQLException {
 		Class.forName("org.hsqldb.jdbc.JDBCDriver");
 
-		connection = DriverManager.getConnection("jdbc:hsqldb:mem:trains", "sa", "sa");
-		connection.setAutoCommit(false);
+		connection = DriverManager.getConnection("jdbc:hsqldb:file:./db/trains", "sa", "sa");
+		connection.setAutoCommit(true);
+		SQLWarning warning = connection.getWarnings();
+		if (warning != null)
+			throw warning;
 	}
 
 	public static void createTables() throws SQLException {
@@ -41,17 +45,22 @@ public class Database {
 		createBridgeTable();
 	}
 
-	public static void executeStatement(String sql) throws SQLException {
+	public static void executeStatement(String sql, boolean expectResult) throws SQLException {
 		PreparedStatement statement = connection.prepareStatement(sql);
 
 		if (statement.execute()) {
-			connection.commit();
+			//connection.commit();
 		} else {
-			throw statement.getWarnings();
+			SQLWarning warning = statement.getWarnings();
+			if (warning == null && !expectResult) {
+				//connection.commit();
+			} else {
+				throw warning;
+			}
 		}
 	}
 
-	public static void executeStatement(String[] sql) throws SQLException {
+	public static void executeStatement(String[] sql, boolean expectResult) throws SQLException {
 		StringBuilder builder = new StringBuilder();
 		for (String s : sql) {
 			builder.append(s + "\n");
@@ -60,31 +69,36 @@ public class Database {
 
 		PreparedStatement statement = connection.prepareStatement(sqlBuf);
 		if (statement.execute()) {
-			connection.commit();
+			//connection.commit();
 		} else {
-			throw statement.getWarnings();
+			SQLWarning warning = statement.getWarnings();
+			if (warning == null && !expectResult) {
+				//connection.commit();
+			} else {
+				throw warning;
+			}
 		}
 	}
 
 	public static void createBridgeTable() throws SQLException {
-		executeStatement(bridgeTable);
+		executeStatement(bridgeTable, false);
 	}
 
 	public static void createTrainTable() throws SQLException {
-		executeStatement(trainTable);
+		executeStatement(trainTable, false);
 	}
 
 	public static void createStationTable() throws SQLException {
-		executeStatement(stationTable);
+		executeStatement(stationTable, false);
 	}
 
 	public static void createStopTable() throws SQLException {
-		executeStatement(stopTable);
+		executeStatement(stopTable, false);
 	}
 
 	public static void createProcedure() throws SQLException {
 		createTables();
-		executeStatement(proc);
+		executeStatement(proc, false);
 	}
 
 	public static void createTrain(Train train) throws SQLException {
@@ -93,7 +107,7 @@ public class Database {
 		statement.setString(1, train.getName());
 
 		if (statement.executeUpdate() > 0) {
-			connection.commit();
+			//connection.commit();
 		} else {
 			throw statement.getWarnings();
 		}
@@ -105,7 +119,7 @@ public class Database {
 		Statement statement = connection.createStatement();
 
 		if (statement.execute(readTrains)) {
-			connection.commit();
+			//connection.commit();
 
 			ResultSet rs = statement.getResultSet();
 
@@ -127,10 +141,15 @@ public class Database {
 		statement.setString(1, oldTrain.getName());
 		statement.setString(2, newTrain.getName());
 
-		if (statement.executeUpdate() > 0) {
-			connection.commit();
+		if (statement.executeUpdate() == 0 || statement.executeUpdate() == 1) {
+			//connection.commit();
 		} else {
-			throw statement.getWarnings();
+			SQLWarning warning = statement.getWarnings();
+			if (warning == null) {
+				//connection.commit();
+			} else {
+				throw warning;
+			}
 		}
 	}
 
@@ -139,8 +158,8 @@ public class Database {
 
 		statement.setString(1, train.getName());
 
-		if (statement.executeUpdate() > 0) {
-			connection.commit();
+		if (statement.executeUpdate() == 0) {
+			//connection.commit();
 		} else {
 			throw statement.getWarnings();
 		}

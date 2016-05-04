@@ -6,13 +6,6 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			Database.openConnection();
-		} catch (ClassNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (SQLException e1) {
-			e1.printStackTrace();
-		}
-		
-		try {
 			Database.createProcedure();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -78,11 +71,12 @@ public class Main {
 
 		Timetable timetable = new Timetable(trains, stations, stops);
 		
-		Train train = new Train("N 343");
+		Train oldTrain = new Train("N 343");
+		Train newTrain = new Train("S 344");
 		try {
-			Database.updateTrain(trains[0], train);
-			Database.deleteTrain(train);
-			Database.createTrain(train);
+			Database.createTrain(oldTrain);
+			Database.updateTrain(oldTrain, newTrain);
+			Database.deleteTrain(newTrain);
 			Database.closeConnection();
 		} catch (SQLException e) {
 			e.printStackTrace();
